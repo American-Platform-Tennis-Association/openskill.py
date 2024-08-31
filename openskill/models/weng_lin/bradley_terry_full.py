@@ -471,6 +471,7 @@ class BradleyTerryFull:
         weights: Optional[List[List[float]]] = None,
         tau: Optional[float] = None,
         limit_sigma: Optional[bool] = None,
+        game_pct: Optional[float] = 1,
     ) -> List[List[BradleyTerryFullRating]]:
         """
         Calculate the new ratings based on the given teams and parameters.
@@ -623,7 +624,7 @@ class BradleyTerryFull:
 
         processed_result = []
         if ranks and tenet:
-            result = self._compute(teams=teams, ranks=ranks, weights=weights)
+            result = self._compute(teams=teams, ranks=ranks, weights=weights, game_pct=game_pct)
             unwound_result = _unwind(tenet, result)[0]
             for item in unwound_result:
                 team = []
@@ -631,7 +632,7 @@ class BradleyTerryFull:
                     team.append(player)
                 processed_result.append(team)
         else:
-            result = self._compute(teams=teams, weights=weights)
+            result = self._compute(teams=teams, weights=weights, game_pct=game_pct)
             for item in result:
                 team = []
                 for player in item:
@@ -739,6 +740,7 @@ class BradleyTerryFull:
         teams: Sequence[Sequence[BradleyTerryFullRating]],
         ranks: Optional[List[float]] = None,
         weights: Optional[List[List[float]]] = None,
+        game_pct: Optional[float] = 1,
     ) -> List[List[BradleyTerryFullRating]]:
         # Initialize Constants
         original_teams = teams
@@ -759,6 +761,9 @@ class BradleyTerryFull:
                 )
                 piq = 1 / (1 + math.exp((team_q.mu - team_i.mu) / c_iq))
                 sigma_squared_to_ciq = team_i.sigma_squared / c_iq
+
+                conf = min(max((2 * game_pct) - 0.3, 0.7), 1.7)
+                sigma_squared_to_ciq *= conf
 
                 s = 0.0
                 if team_q.rank > team_i.rank:
