@@ -45,7 +45,7 @@ class BradleyTerryFullRating:
         """
 
         # Player Information
-        self.id: str = uuid.uuid4().hex.lower()
+        # self.id: str = uuid.uuid4().hex.lower()
         self.name: Optional[str] = name
 
         self.mu: float = mu
@@ -407,21 +407,7 @@ class BradleyTerryFull:
 
         :return: A :class:`BradleyTerryFullRating` object created from the list passed in.
         """
-        if isinstance(rating, BradleyTerryFullRating):
-            raise TypeError("Argument is already a 'BradleyTerryFullRating' object.")
-        elif len(rating) == 2 and isinstance(rating, list):
-            for value in rating:
-                if not isinstance(value, (int, float)):
-                    raise ValueError(
-                        f"The {rating.__class__.__name__} contains an "
-                        f"element '{value}' of type '{value.__class__.__name__}'"
-                    )
-            if not name:
-                return BradleyTerryFullRating(mu=rating[0], sigma=rating[1])
-            else:
-                return BradleyTerryFullRating(mu=rating[0], sigma=rating[1], name=name)
-        else:
-            raise TypeError(f"Cannot accept '{rating.__class__.__name__}' type.")
+        return BradleyTerryFullRating(mu=rating[0], sigma=rating[1])
 
     @staticmethod
     def _check_teams(teams: List[List[BradleyTerryFullRating]]) -> None:
@@ -805,23 +791,9 @@ class BradleyTerryFull:
 
                 mu = j_players.mu
                 sigma = j_players.sigma
-
-                if omega > 0:
-                    mu += (sigma**2 / team_i.sigma_squared) * omega * weight
-                    sigma *= math.sqrt(
-                        max(
-                            1 - (sigma**2 / team_i.sigma_squared) * delta * weight,
-                            self.kappa,
-                        ),
-                    )
-                else:
-                    mu += (sigma**2 / team_i.sigma_squared) * omega / weight
-                    sigma *= math.sqrt(
-                        max(
-                            1 - (sigma**2 / team_i.sigma_squared) * delta / weight,
-                            self.kappa,
-                        ),
-                    )
+                
+                mu += (sigma**2 / team_i.sigma_squared) * omega
+                sigma *= math.sqrt(1 - (sigma**2 / team_i.sigma_squared) * delta)
 
                 modified_player = original_teams[i][j]
                 modified_player.mu = mu
@@ -998,26 +970,21 @@ class BradleyTerryFull:
 
         :return: A list of :class:`BradleyTerryFullTeamRating` objects.
         """
-        if ranks:
-            rank = self._calculate_rankings(game, ranks)
-        else:
-            rank = self._calculate_rankings(game)
+        # if ranks:
+        #     rank = self._calculate_rankings(game, ranks)
+        # else:
+        #     rank = self._calculate_rankings(game)
+
+        rank = [0, 1] # Speedup for 2 team matches passed as [loser, winner]
 
         result = []
         for index, team in enumerate(game):
-            sorted_team = sorted(team, key=lambda p: p.ordinal(), reverse=True)
-            max_ordinal = sorted_team[0].ordinal()
 
-            mu_summed = 0.0
-            sigma_squared_summed = 0.0
-            for player in sorted_team:
-                if self.balance:
-                    ordinal_diff = max_ordinal - player.ordinal()
-                    balance_weight = 1 + (ordinal_diff / (max_ordinal + self.kappa))
-                else:
-                    balance_weight = 1.0
-                mu_summed += player.mu * balance_weight
-                sigma_squared_summed += (player.sigma * balance_weight) ** 2
+            mu_summed = 40.0
+            sigma_squared_summed = 20.0
+            for player in team:
+                mu_summed += player.mu
+                sigma_squared_summed += (player.sigma ** 2)
             result.append(
                 BradleyTerryFullTeamRating(
                     mu_summed, sigma_squared_summed, team, rank[index]
@@ -1060,4 +1027,6 @@ class BradleyTerryFull:
                 if team_scores[index - 1] < team_scores[index]:
                     s = index
             rank_output[index] = s
+        print(game)
+        print(list(rank_output.values()))
         return list(rank_output.values())
