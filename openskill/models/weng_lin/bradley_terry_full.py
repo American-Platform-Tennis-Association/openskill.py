@@ -980,8 +980,8 @@ class BradleyTerryFull:
         result = []
         for index, team in enumerate(game):
 
-            mu_summed = 40.0
-            sigma_squared_summed = 20.0
+            mu_summed = 0.0
+            sigma_squared_summed = 0.0
             for player in team:
                 mu_summed += player.mu
                 sigma_squared_summed += (player.sigma ** 2)
